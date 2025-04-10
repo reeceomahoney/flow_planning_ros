@@ -1,0 +1,37 @@
+services:
+  ros_docker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+      args:
+        - CATKIN_WORKSPACE_DIR=${CATKIN_WORKSPACE_DIR}
+        - USERNAME=${USERNAME:-developer}
+        - UID=${UID}
+        - GID=${GID}
+    image: ros_docker
+    container_name: ros_docker
+    environment:
+      - ROS_MASTER_URI=http://${ROBOT_IP}:11311
+      - ROS_IP=${YOUR_IP}
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - TERM=${TERM}
+    extra_hosts:
+      - "${ROBOT_HOSTNAME}:${ROBOT_IP}"
+    # Required for communicating over the network
+    network_mode: "host"
+    # Required for accessing hardware
+    # privileged: true
+    tty: true
+    volumes:
+      # Required for accessing hardware
+      #- /dev:/dev
+      # Required for accessing storage media
+      #- /media:/media
+      - ../src:${CATKIN_WORKSPACE_DIR}/src
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+    runtime: nvidia
