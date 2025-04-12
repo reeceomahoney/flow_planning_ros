@@ -3,7 +3,8 @@
 ## Install
 clone
 ```bash
-git clone --recurse-submodules -j8 git@github.com:reeceomahoney/flow_planning_ros.git
+git clone git@github.com:reeceomahoney/flow_planning_ros.git
+git submodule update --init
 ```
 build docker container
 ```bash
@@ -16,4 +17,12 @@ build workspace
 catkin build
 ```
 
-
+## Run
+launch the simulation
+```bash
+roslaunch panda_gazebo panda.launch
+```
+launch the controller
+```bash
+roslaunch flow_planning controller.launch
+```

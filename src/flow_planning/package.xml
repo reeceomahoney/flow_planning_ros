@@ -1,0 +1,13 @@
+<package format="2">
+  <name>flow_planning</name>
+  <version>0.0.1</version>
+  <description>Flow matching controller for Franka Emika Panda</description>
+  <maintainer email="reeceo@robots.ox.ac.uk">Reece O'Mahoney</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>franka_ros_interface</exec_depend>
+</package>

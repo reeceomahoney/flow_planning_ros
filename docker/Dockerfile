@@ -102,7 +102,8 @@ RUN pip install --no-cache-dir \
   numpy==1.23 \ 
   numpy-quaternion==2020.5.11.13.33.35 \
   future \
-  numba
+  numba \
+  torch
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y sudo \

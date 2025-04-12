@@ -1,0 +1,7 @@
+<launch>
+  <arg name="model_path" default="$(find flow_planning)/models/model.pt"/>
+
+  <node name="flow_planning_controller" pkg="flow_planning" type="controller.py" output="screen">
+    <param name="model_path" value="$(arg model_path)"/>
+  </node>
+</launch>
