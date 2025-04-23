@@ -5,9 +5,7 @@ find_package(catkin REQUIRED COMPONENTS rospy)
 
 catkin_package()
 
-include_directories( ${catkin_INCLUDE_DIRS})
-
-catkin_python_setup()
+include_directories(${catkin_INCLUDE_DIRS})
 
 install(DIRECTORY
   models

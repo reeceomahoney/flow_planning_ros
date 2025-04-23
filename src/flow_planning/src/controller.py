@@ -3,6 +3,7 @@
 import random
 from copy import deepcopy
 
+import numpy as np
 import rospy
 import torch
 from scipy.signal import savgol_filter
@@ -16,6 +17,7 @@ class FlowMatchingController:
 
         self.model = self._load_model()
         self.arm = CustomArmInterface()
+        self.rate = rospy.Rate(30)
 
         self.arm.move_to_neutral()
         self.initial_pose = deepcopy(self.arm.joint_ordered_angles())
@@ -65,9 +67,24 @@ class FlowMatchingController:
                     print("Resampling goal...")
                     actions = self.model(obs, self.goal).squeeze().cpu()
                     actions[:, :7] += torch.tensor(self.default_joint_pos)
+                    actions[-4:, :] = actions[-5:-4, :]
                     actions = actions.numpy()
 
-                self.arm.follow_trajectory(actions[::10])
+                curr_pos = np.array(self.arm.joint_ordered_angles())
+                prev_actions = actions[0].copy()
+                alpha = 0.05
+
+                for i in range(actions.shape[0]):
+                    while np.linalg.norm(actions[i, :7] - curr_pos) > 0.1:
+                        act = alpha * actions[i] + (1 - alpha) * prev_actions
+                        self.arm.set_joint_positions(
+                            dict(zip(self.arm.joint_names(), act[:7].tolist()))
+                        )
+                        prev_actions = act.copy()
+                        self.rate.sleep()
+                        curr_pos = np.array(self.arm.joint_ordered_angles())
+
+                rospy.sleep(0.5)
 
             except Exception as e:
                 rospy.logerr(f"Error in control loop: {e}")
