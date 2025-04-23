@@ -7,10 +7,7 @@ catkin_package()
 
 include_directories( ${catkin_INCLUDE_DIRS})
 
-catkin_install_python(PROGRAMS
-  src/controller.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+catkin_python_setup()
 
 install(DIRECTORY
   models

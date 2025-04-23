@@ -5,8 +5,9 @@ from copy import deepcopy
 
 import rospy
 import torch
-from franka_interface import ArmInterface
 from scipy.signal import savgol_filter
+
+from flow_planning.arm import CustomArmInterface
 
 
 class FlowMatchingController:
@@ -14,8 +15,7 @@ class FlowMatchingController:
         rospy.init_node("flow_matching_controller")
 
         self.model = self._load_model()
-        self.arm = ArmInterface()
-        self.rate = rospy.Rate(30)
+        self.arm = CustomArmInterface()
 
         self.arm.move_to_neutral()
         self.initial_pose = deepcopy(self.arm.joint_ordered_angles())
@@ -58,24 +58,16 @@ class FlowMatchingController:
         while not rospy.is_shutdown():
             try:
                 obs = self.get_observation()
-                self.goal[0] = random.uniform(0.35, 0.75)
+                self.goal[0] = random.uniform(0.35, 0.5)
                 self.goal[1] = random.uniform(-0.5, 0.5)
-                self.goal[2] = random.uniform(0.15, 0.75)
+                self.goal[2] = random.uniform(0.15, 0.5)
                 with torch.no_grad():
                     print("Resampling goal...")
-                    actions = self.model(obs, self.goal).squeeze().cpu().numpy()
+                    actions = self.model(obs, self.goal).squeeze().cpu()
+                    actions += torch.tensor(self.default_joint_pos)
+                    actions = actions.numpy()
 
-                actions[-4:, :] = actions[-5:-4, :]
-                for i in range(actions.shape[1]):
-                    actions[:, i] = savgol_filter(
-                        actions[:, i], window_length=51, polyorder=2
-                    )
-
-                for i in range(actions.shape[0]):
-                    self.arm.set_joint_positions(
-                        dict(zip(self.arm.joint_names(), actions[i].tolist())),
-                    )
-                    self.rate.sleep()
+                self.arm.follow_trajectory(actions[::10])
 
             except Exception as e:
                 rospy.logerr(f"Error in control loop: {e}")
