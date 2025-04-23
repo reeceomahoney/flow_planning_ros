@@ -8,7 +8,7 @@ import rospy
 import torch
 from scipy.signal import savgol_filter
 
-from flow_planning.arm import CustomArmInterface
+from franka_interface import ArmInterface
 
 
 class FlowMatchingController:
@@ -16,7 +16,7 @@ class FlowMatchingController:
         rospy.init_node("flow_matching_controller")
 
         self.model = self._load_model()
-        self.arm = CustomArmInterface()
+        self.arm = ArmInterface()
         self.rate = rospy.Rate(30)
 
         self.arm.move_to_neutral()
