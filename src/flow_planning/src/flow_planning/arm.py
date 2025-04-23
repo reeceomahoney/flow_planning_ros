@@ -19,10 +19,10 @@ class CustomArmInterface(ArmInterface):
         )
 
         for t in range(trajectory.shape[0]):
-            positions = dict(zip(self.joint_names(), trajectory[t].tolist()))
             traj_client.add_point(
-                positions=[positions[n] for n in self._joint_names],
+                positions=trajectory[t, :7].tolist(),
                 time=(t + 1) / (0.5 * 3),
+                velocities=trajectory[t, 7:].tolist(),
             )
 
         fail_msg = "{}: {} limb failed to reach commanded joint positions.".format(

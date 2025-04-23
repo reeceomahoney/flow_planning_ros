@@ -64,7 +64,7 @@ class FlowMatchingController:
                 with torch.no_grad():
                     print("Resampling goal...")
                     actions = self.model(obs, self.goal).squeeze().cpu()
-                    actions += torch.tensor(self.default_joint_pos)
+                    actions[:, :7] += torch.tensor(self.default_joint_pos)
                     actions = actions.numpy()
 
                 self.arm.follow_trajectory(actions[::10])
