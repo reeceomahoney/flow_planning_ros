@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import random
 
 import numpy as np
 import pytorch_kinematics as pk
@@ -15,6 +16,11 @@ from flow_planning.gp import CostGPTrajectory
 
 class FlowMatchingController:
     def __init__(self):
+        seed = 42
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
         rospy.init_node("flow_matching_controller")
 
         self.model = self._load_model()
@@ -24,7 +30,7 @@ class FlowMatchingController:
         self.state_dim = 14
         self.sampling_steps = 10
         self.T = 64
-        self.use_refinement = False
+        self.use_refinement = True
         self.use_guide = True
         self.device = "cuda"
 
@@ -43,7 +49,7 @@ class FlowMatchingController:
         ).to(self.device)
         self.goal = torch.cat([self.goal, torch.zeros(7).to(self.device)]).unsqueeze(0)
 
-        self.arm.move_to_cartesian_pose([0.5, -0.3, 0.3])
+        self.arm.move_to_cartesian_pose([0.5, -0.3, 0.3], [0, 1, 0, 0])
 
         rospy.loginfo("Ready to start control. Press Enter to begin.")
         input("Hit Enter to Start")
@@ -76,12 +82,12 @@ class FlowMatchingController:
                 # filter
                 for i in range(actions.shape[1]):
                     actions[:, i] = savgol_filter(
-                        actions[:, i], window_length=41, polyorder=2
+                        actions[:, i], window_length=21, polyorder=2
                     )
 
                 # moving average variables
                 curr_pos = np.array(self.arm.joint_ordered_angles())
-                prev_actions = actions[0].copy()
+                prev_actions = obs[0].cpu().numpy().copy()
                 alpha = 0.2
 
                 # execute actions
@@ -115,7 +121,8 @@ class FlowMatchingController:
 
         # refinement step
         if self.use_refinement:
-            midpoint = x[:, self.T // 2].clone()
+            x_unnorm = self.model.denormalize(x)
+            midpoint = x_unnorm[:, self.T // 2].clone()
             x_0 = torch.randn((1, self.T, self.state_dim)).to(self.device)
             x = 0.5 * x_0 + 0.5 * x
             x = torch.cat([x[:, : self.T // 2], x[:, self.T // 2 :]], dim=0)
@@ -128,7 +135,7 @@ class FlowMatchingController:
                 x = self.model(x, data, i + self.sampling_steps // 2)
                 if self.use_guide:
                     guide_vals = self._guide_fn(x)
-                    x += (1 - self.timesteps[i]) * guide_vals
+                    x += (1 - self.timesteps[i + self.sampling_steps // 2]) * guide_vals
 
             x = torch.cat([x[0], x[1]], dim=0)
 
@@ -153,6 +160,8 @@ class FlowMatchingController:
         smooth_grad = torch.autograd.grad([cost.sum()], [x])[0].detach()
 
         grad = 0.1 * collision_grad - 1e-6 * smooth_grad
+        grad[:, 0] = 0
+        grad[:, -1] = 0
         return 1.2 * grad
 
 
