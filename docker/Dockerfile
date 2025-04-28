@@ -93,6 +93,7 @@ RUN apt-get update \
   && apt-get install --no-install-recommends -y \
   python3 \
   python3-pip \
+  python3-tk \
   build-essential \
   swig \
   libcppunit-dev \
@@ -103,7 +104,8 @@ RUN pip install --no-cache-dir \
   numpy-quaternion==2020.5.11.13.33.35 \
   future \
   numba \
-  torch
+  torch \
+  pytorch-kinematics
 
 RUN apt-get update \
   && apt-get install --no-install-recommends -y sudo \
